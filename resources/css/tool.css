@@ -565,13 +565,15 @@ div.nova-calendar div.nc-event.multi div.content {
     border-bottom: 1px solid #e5e7eb;
 }
 
+/* Hour-labeled row: its bottom is the half-hour line (lighter, dashed) */
 .nc-grid-cell.nc-hour-border {
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.nc-grid-cell:not(.nc-hour-border) {
     border-bottom-style: dashed;
     border-bottom-color: #f3f4f6;
+}
+
+/* Half-hour row: its bottom is the next hour line (prominent, solid) */
+.nc-grid-cell:not(.nc-hour-border) {
+    border-bottom: 1px solid #dadce0;
 }
 
 .nc-grid-cell.nc-today-col {
@@ -689,8 +691,12 @@ div.nova-calendar div.nc-event.multi div.content {
     border-bottom-color: #374151;
 }
 
-.dark .nc-grid-cell:not(.nc-hour-border) {
+.dark .nc-grid-cell.nc-hour-border {
     border-bottom-color: #1f2937;
+}
+
+.dark .nc-grid-cell:not(.nc-hour-border) {
+    border-bottom-color: #374151;
 }
 
 .dark .nc-grid-cell.nc-today-col {
