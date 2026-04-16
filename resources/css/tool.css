@@ -392,3 +392,222 @@ div.nova-calendar div.nc-event.multi div.content {
     grid-row: 1 / -1;
     grid-column: 2 / 3;
 }
+
+/*
+ *  View Switcher
+ */
+
+.nc-view-switcher {
+    display: flex;
+    border: 1px rgba(var(--colors-gray-500), 0.2) solid;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.nc-view-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 13px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    transition: background-color 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.nc-view-btn:not(:last-child) {
+    border-right: 1px rgba(var(--colors-gray-500), 0.2) solid;
+}
+
+.nc-view-btn:hover {
+    background-color: rgba(var(--colors-gray-500), 0.1);
+}
+
+.nc-view-btn-active {
+    background-color: rgba(var(--colors-primary-500), 0.9);
+    color: #fff;
+}
+
+.nc-view-btn-active:hover {
+    background-color: rgba(var(--colors-primary-500), 1);
+}
+
+/*
+ *  Time Grid (Week & Day views)
+ */
+
+.nc-week-view,
+.nc-day-view {
+    width: 100%;
+    user-select: none;
+}
+
+.nc-time-grid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Grid header */
+.nc-grid-header {
+    display: grid;
+    grid-template-columns: 60px repeat(7, 1fr);
+    border-bottom: 2px solid rgba(var(--colors-gray-500), 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.nc-day-grid .nc-grid-header {
+    /* Day view overrides column count via inline style */
+}
+
+.nc-gutter-header {
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 11px;
+    color: rgba(var(--colors-gray-500), 0.6);
+}
+
+.nc-day-header,
+.nc-staff-header {
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    border-left: 1px solid rgba(var(--colors-gray-500), 0.1);
+}
+
+.nc-day-header.nc-today {
+    color: rgba(var(--colors-primary-500), 1);
+}
+
+.nc-day-name {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.7;
+}
+
+.nc-day-number {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.nc-staff-name {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Grid body */
+.nc-grid-body {
+    overflow-y: auto;
+    max-height: 600px;
+}
+
+.nc-grid-rows {
+    position: relative;
+}
+
+.nc-time-row {
+    display: grid;
+    grid-template-columns: 60px repeat(7, 1fr);
+    height: 30px;
+    min-height: 30px;
+}
+
+.nc-day-grid .nc-time-row {
+    /* Day view overrides via inline style */
+}
+
+.nc-gutter-cell {
+    position: relative;
+    border-right: 1px solid rgba(var(--colors-gray-500), 0.15);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-right: 6px;
+}
+
+.nc-time-label {
+    font-size: 10px;
+    color: rgba(var(--colors-gray-500), 0.6);
+    line-height: 1;
+    transform: translateY(-5px);
+}
+
+.nc-grid-cell {
+    border-left: 1px solid rgba(var(--colors-gray-500), 0.08);
+    border-bottom: 1px dashed rgba(var(--colors-gray-500), 0.06);
+}
+
+.nc-grid-cell.nc-hour-border {
+    border-top: 1px solid rgba(var(--colors-gray-500), 0.15);
+}
+
+.nc-grid-cell.nc-today {
+    background-color: rgba(var(--colors-primary-500), 0.02);
+}
+
+/* Time grid events */
+.nc-grid-event {
+    position: absolute;
+    overflow: hidden;
+    cursor: pointer;
+    transition: opacity 0.15s, box-shadow 0.15s;
+    opacity: 0.92;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    line-height: 1.3;
+}
+
+.nc-grid-event:hover {
+    opacity: 1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 20 !important;
+}
+
+.nc-event-time {
+    font-size: 10px;
+    font-weight: 600;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nc-event-title {
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nc-event-service {
+    font-size: 10px;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Dark mode adjustments for time grid */
+@media (prefers-color-scheme: dark) {
+    .nc-grid-cell {
+        border-left-color: rgba(255, 255, 255, 0.05);
+        border-bottom-color: rgba(255, 255, 255, 0.03);
+    }
+    .nc-grid-cell.nc-hour-border {
+        border-top-color: rgba(255, 255, 255, 0.1);
+    }
+    .nc-gutter-cell {
+        border-right-color: rgba(255, 255, 255, 0.1);
+    }
+    .nc-grid-header {
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+}

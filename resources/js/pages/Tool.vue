@@ -5,7 +5,7 @@
         <div id="nc-control">
             <div class="left-items">
                 <a
-                    @click="prevMonth"
+                    @click="prevPeriod"
                     href="#"
                     class="button hover:bg-gray-100 dark:hover:bg-gray-700"
                     title="Alt + ←"
@@ -45,7 +45,7 @@
                 </a>
 
                 <a
-                    @click="nextMonth"
+                    @click="nextPeriod"
                     href="#"
                     class="button hover:bg-gray-100 dark:hover:bg-gray-700"
                     title="Alt + →"
@@ -67,6 +67,7 @@
                 </a>
 
                 <Dropdown
+                    v-if="activeView === 'month'"
                     :handle-internal-clicks="true"
                     class="flex h-9 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     dusk="month-picker"
@@ -133,15 +134,94 @@
                 </Dropdown>
 
                 <h1 class="text-90 font-normal text-xl md:text-2xl noselect">
-                    <span>{{ $data.title }}</span>
+                    <span>{{ displayTitle }}</span>
                 </h1>
             </div>
 
-            <div class="center-items"></div>
+            <div class="center-items">
+                <!-- View switcher -->
+                <div class="nc-view-switcher">
+                    <button
+                        v-for="v in viewOptions"
+                        :key="v.key"
+                        class="nc-view-btn"
+                        :class="{ 'nc-view-btn-active': activeView === v.key }"
+                        @click="switchView(v.key)"
+                    >
+                        {{ v.label }}
+                    </button>
+                </div>
+            </div>
 
             <div class="right-items">
+                <!-- Staff filter (for week/day views) -->
                 <Dropdown
-                    v-if="Object.keys(availableFilters).length"
+                    v-if="activeView !== 'month' && staffList.length > 0"
+                    :handle-internal-clicks="true"
+                    :class="{
+                        'bg-primary-500 hover:bg-primary-600 border-primary-500': selectedStaffIds.length > 0,
+                        'dark:bg-primary-500 dark:hover:bg-primary-600 dark:border-primary-500': selectedStaffIds.length > 0,
+                    }"
+                    class="flex h-9 hover:bg-gray-100 dark:hover:bg-gray-700 rounded mr-2"
+                    dusk="staff-filter"
+                >
+                    <DropdownTrigger
+                        :class="{
+                            'text-white hover:text-white dark:text-gray-800 dark:hover:text-gray-800': selectedStaffIds.length > 0,
+                        }"
+                        class="toolbar-button px-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span
+                            v-if="selectedStaffIds.length > 0"
+                            :class="{ 'text-white dark:text-gray-800': selectedStaffIds.length > 0 }"
+                            class="ml-1 font-bold text-sm"
+                        >
+                            {{ selectedStaffIds.length }}
+                        </span>
+                    </DropdownTrigger>
+
+                    <template #menu>
+                        <DropdownMenu width="220">
+                            <ScrollWrap
+                                :height="350"
+                                class="bg-white dark:bg-gray-900"
+                            >
+                                <div class="divide-y divide-gray-200 dark:divide-gray-800 divide-solid">
+                                    <div v-if="selectedStaffIds.length > 0" class="bg-gray-100">
+                                        <button
+                                            class="py-2 w-full block tracking-wide text-center text-gray-500 dark:bg-gray-800 dark:hover:bg-gray-700 focus:outline-none text-sm"
+                                            @click="selectedStaffIds = []; loadTimeGridEvents();"
+                                        >
+                                            Toate
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <button
+                                            v-for="staff in staffList"
+                                            :key="staff.id"
+                                            class="py-2 px-3 w-full block dark:bg-gray-800 dark:hover:bg-gray-700 hover:bg-gray-200 text-left text-sm flex items-center gap-2"
+                                            :class="{ 'font-bold': selectedStaffIds.includes(staff.id) }"
+                                            @click="toggleStaffFilter(staff.id)"
+                                        >
+                                            <span
+                                                class="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                                                :style="{ backgroundColor: staff.color }"
+                                            ></span>
+                                            {{ staff.name }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </ScrollWrap>
+                        </DropdownMenu>
+                    </template>
+                </Dropdown>
+
+                <!-- Existing month-view filter -->
+                <Dropdown
+                    v-if="activeView === 'month' && Object.keys(availableFilters).length"
                     :handle-internal-clicks="true"
                     :class="{
                         'bg-primary-500 hover:bg-primary-600 border-primary-500':
@@ -219,7 +299,8 @@
             </div>
         </div>
 
-        <div style="width: 100%; overflow: scroll">
+        <!-- Month view (existing) -->
+        <div v-if="activeView === 'month'" style="width: 100%; overflow: scroll">
             <Card
                 class="flex flex-col items-center justify-center dark:bg-gray-800"
                 style="
@@ -430,19 +511,57 @@
                 </div>
             </Card>
         </div>
+
+        <!-- Week view -->
+        <div v-if="activeView === 'week'" style="width: 100%; overflow: auto">
+            <Card
+                class="flex flex-col dark:bg-gray-800"
+                style="min-height: 300px; min-width: 800px; background-color: var(--bg-gray-800);"
+            >
+                <WeekView
+                    :events="timeGridEvents"
+                    :week-start="weekStartDate"
+                    :staff-list="staffList"
+                    @open-event="openTimeGridEvent"
+                />
+            </Card>
+        </div>
+
+        <!-- Day view -->
+        <div v-if="activeView === 'day'" style="width: 100%; overflow: auto">
+            <Card
+                class="flex flex-col dark:bg-gray-800"
+                style="min-height: 300px; min-width: 800px; background-color: var(--bg-gray-800);"
+            >
+                <DayView
+                    :events="timeGridEvents"
+                    :current-date="currentDayDate"
+                    :staff-list="displayStaffForDay"
+                    @open-event="openTimeGridEvent"
+                />
+            </Card>
+        </div>
     </div>
 </template>
 
 <script>
+    import WeekView from "../components/WeekView.vue";
+    import DayView from "../components/DayView.vue";
+
     export default {
+        components: {
+            WeekView,
+            DayView,
+        },
+
         mounted() {
             this.init();
 
             Nova.addShortcut("alt+right", (event) => {
-                this.nextMonth();
+                this.nextPeriod();
             });
             Nova.addShortcut("alt+left", (event) => {
-                this.prevMonth();
+                this.prevPeriod();
             });
             Nova.addShortcut("alt+h", (event) => {
                 this.reset();
@@ -453,34 +572,80 @@
             reset() {
                 this.month = null;
                 this.year = null;
-                this.reload();
+                this.currentDay = new Date();
+                this.currentWeekStart = this.getMonday(new Date());
+                if (this.activeView === 'month') {
+                    this.reload();
+                } else {
+                    this.loadTimeGridEvents();
+                }
             },
 
             init() {
+                this.currentDay = new Date();
+                this.currentWeekStart = this.getMonday(new Date());
+                this.loadStaffList();
+
                 if (this.hasStoredSettings()) {
                     this.restoreSettings();
-                    this.reload(false);
+                    if (this.activeView === 'month') {
+                        this.reload(false);
+                    } else {
+                        this.loadTimeGridEvents();
+                    }
                 } else {
                     this.reload(true);
                 }
             },
 
-            prevMonth() {
-                this.month -= 1;
-                this.reload();
+            switchView(view) {
+                this.activeView = view;
+                this.storeSettings();
+                if (view === 'month') {
+                    this.reload();
+                } else {
+                    this.loadTimeGridEvents();
+                }
             },
 
-            nextMonth() {
-                this.month += 1;
-                this.reload();
+            prevPeriod() {
+                if (this.activeView === 'month') {
+                    this.month -= 1;
+                    this.reload();
+                } else if (this.activeView === 'week') {
+                    const d = new Date(this.currentWeekStart);
+                    d.setDate(d.getDate() - 7);
+                    this.currentWeekStart = d;
+                    this.loadTimeGridEvents();
+                } else if (this.activeView === 'day') {
+                    const d = new Date(this.currentDay);
+                    d.setDate(d.getDate() - 1);
+                    this.currentDay = d;
+                    this.loadTimeGridEvents();
+                }
+            },
+
+            nextPeriod() {
+                if (this.activeView === 'month') {
+                    this.month += 1;
+                    this.reload();
+                } else if (this.activeView === 'week') {
+                    const d = new Date(this.currentWeekStart);
+                    d.setDate(d.getDate() + 7);
+                    this.currentWeekStart = d;
+                    this.loadTimeGridEvents();
+                } else if (this.activeView === 'day') {
+                    const d = new Date(this.currentDay);
+                    d.setDate(d.getDate() + 1);
+                    this.currentDay = d;
+                    this.loadTimeGridEvents();
+                }
             },
 
             reload(isInitRequest = false) {
                 let vue = this;
                 vue.loading = true;
 
-                // Work out the apiPath from the current Tool path, this works
-                // because the ToolServiceProvider enforces that both use the same configurable uri part
                 let apiUrl =
                     "/nova-vendor/marshmallow/nova-calendar" +
                     this.calendarUrl() +
@@ -514,7 +679,70 @@
                     });
             },
 
+            loadStaffList() {
+                Nova.request()
+                    .get("/manage/calendar/resources")
+                    .then((response) => {
+                        this.staffList = response.data.staff || [];
+                    })
+                    .catch(() => {
+                        this.staffList = [];
+                    });
+            },
+
+            loadTimeGridEvents() {
+                let startDate, endDate;
+
+                if (this.activeView === 'week') {
+                    startDate = this.formatDate(this.currentWeekStart);
+                    const end = new Date(this.currentWeekStart);
+                    end.setDate(end.getDate() + 6);
+                    endDate = this.formatDate(end);
+                } else {
+                    startDate = this.formatDate(this.currentDay);
+                    endDate = startDate;
+                }
+
+                let url = `/manage/calendar/events?start=${startDate}&end=${endDate}`;
+
+                if (this.selectedStaffIds.length > 0) {
+                    this.selectedStaffIds.forEach((id) => {
+                        url += `&staff[]=${id}`;
+                    });
+                }
+
+                this.loading = true;
+                Nova.request()
+                    .get(url)
+                    .then((response) => {
+                        this.timeGridEvents = response.data || [];
+                        this.loading = false;
+                        this.storeSettings();
+                    })
+                    .catch(() => {
+                        this.timeGridEvents = [];
+                        this.loading = false;
+                    });
+            },
+
+            toggleStaffFilter(staffId) {
+                const idx = this.selectedStaffIds.indexOf(staffId);
+                if (idx === -1) {
+                    this.selectedStaffIds.push(staffId);
+                } else {
+                    this.selectedStaffIds.splice(idx, 1);
+                }
+                this.loadTimeGridEvents();
+            },
+
+            openTimeGridEvent(event) {
+                if (event.id) {
+                    Nova.visit(`/resources/customer-bookings/${event.id}`);
+                }
+            },
+
             open(e, url) {
+                if (!url) return;
                 if (e.metaKey || e.ctrlKey) {
                     window.open(Nova.url(url));
                 } else {
@@ -579,6 +807,8 @@
                         year: this.year,
                         month: this.month,
                         activeFilterKey: this.activeFilterKey,
+                        activeView: this.activeView,
+                        selectedStaffIds: this.selectedStaffIds,
                     })
                 );
             },
@@ -591,7 +821,90 @@
                     this.year = storedData.year;
                     this.month = storedData.month;
                     this.activeFilterKey = storedData.activeFilterKey;
+                    if (storedData.activeView) {
+                        this.activeView = storedData.activeView;
+                    }
+                    if (storedData.selectedStaffIds) {
+                        this.selectedStaffIds = storedData.selectedStaffIds;
+                    }
                 }
+            },
+
+            getMonday(d) {
+                const date = new Date(d);
+                const day = date.getDay();
+                const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+                date.setDate(diff);
+                date.setHours(0, 0, 0, 0);
+                return date;
+            },
+
+            formatDate(d) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            },
+        },
+
+        computed: {
+            viewOptions() {
+                return [
+                    { key: 'month', label: 'Lun\u0103' },
+                    { key: 'week', label: 'S\u0103pt\u0103m\u00e2n\u0103' },
+                    { key: 'day', label: 'Zi' },
+                ];
+            },
+
+            weekStartDate() {
+                return this.formatDate(this.currentWeekStart);
+            },
+
+            currentDayDate() {
+                return this.formatDate(this.currentDay);
+            },
+
+            displayTitle() {
+                if (this.activeView === 'month') {
+                    return this.title;
+                }
+
+                const monthNames = [
+                    'Ianuarie', 'Februarie', 'Martie', 'Aprilie',
+                    'Mai', 'Iunie', 'Iulie', 'August',
+                    'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie',
+                ];
+
+                if (this.activeView === 'week') {
+                    const start = new Date(this.currentWeekStart);
+                    const end = new Date(this.currentWeekStart);
+                    end.setDate(end.getDate() + 6);
+                    const startDay = start.getDate();
+                    const endDay = end.getDate();
+                    const startMonth = monthNames[start.getMonth()];
+                    const endMonth = monthNames[end.getMonth()];
+                    const year = end.getFullYear();
+
+                    if (start.getMonth() === end.getMonth()) {
+                        return `${startDay} - ${endDay} ${startMonth} ${year}`;
+                    }
+                    return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${year}`;
+                }
+
+                if (this.activeView === 'day') {
+                    const d = new Date(this.currentDay);
+                    const dayNames = ['Duminic\u0103', 'Luni', 'Mar\u021bi', 'Miercuri', 'Joi', 'Vineri', 'S\u00e2mb\u0103t\u0103'];
+                    return `${dayNames[d.getDay()]}, ${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+                }
+
+                return '';
+            },
+
+            displayStaffForDay() {
+                if (this.selectedStaffIds.length > 0) {
+                    return this.staffList.filter((s) => this.selectedStaffIds.includes(s.id));
+                }
+                return this.staffList;
             },
         },
 
@@ -600,6 +913,7 @@
         data() {
             return {
                 loading: true,
+                activeView: "month",
                 resetFiltersLabel: "All events",
                 availableFilters: {},
                 activeFilterKey: null,
@@ -618,6 +932,12 @@
                             "rgba(var(--colors-primary-500), 0.9)",
                     },
                 },
+                // Time grid views data
+                timeGridEvents: [],
+                staffList: [],
+                selectedStaffIds: [],
+                currentDay: new Date(),
+                currentWeekStart: new Date(),
             };
         },
     };
