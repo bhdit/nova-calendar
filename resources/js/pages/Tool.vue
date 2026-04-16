@@ -869,10 +869,9 @@
                     return this.title;
                 }
 
-                const monthNames = [
-                    'Ianuarie', 'Februarie', 'Martie', 'Aprilie',
-                    'Mai', 'Iunie', 'Iulie', 'August',
-                    'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie',
+                const monthShort = [
+                    'ian', 'feb', 'mar', 'apr', 'mai', 'iun',
+                    'iul', 'aug', 'sep', 'oct', 'noi', 'dec',
                 ];
 
                 if (this.activeView === 'week') {
@@ -881,20 +880,18 @@
                     end.setDate(end.getDate() + 6);
                     const startDay = start.getDate();
                     const endDay = end.getDate();
-                    const startMonth = monthNames[start.getMonth()];
-                    const endMonth = monthNames[end.getMonth()];
                     const year = end.getFullYear();
 
                     if (start.getMonth() === end.getMonth()) {
-                        return `${startDay} - ${endDay} ${startMonth} ${year}`;
+                        return `${startDay}\u2013${endDay} ${monthShort[start.getMonth()]} ${year}`;
                     }
-                    return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${year}`;
+                    return `${startDay} ${monthShort[start.getMonth()]} \u2013 ${endDay} ${monthShort[end.getMonth()]} ${year}`;
                 }
 
                 if (this.activeView === 'day') {
                     const d = new Date(this.currentDay);
-                    const dayNames = ['Duminic\u0103', 'Luni', 'Mar\u021bi', 'Miercuri', 'Joi', 'Vineri', 'S\u00e2mb\u0103t\u0103'];
-                    return `${dayNames[d.getDay()]}, ${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+                    const dayShort = ['dum', 'lun', 'mar', 'mie', 'joi', 'vin', 's\u00e2m'];
+                    return `${dayShort[d.getDay()]}, ${d.getDate()} ${monthShort[d.getMonth()]} ${d.getFullYear()}`;
                 }
 
                 return '';
