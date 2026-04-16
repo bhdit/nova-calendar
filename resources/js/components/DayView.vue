@@ -8,9 +8,9 @@
                     v-for="staff in displayStaff"
                     :key="staff.id"
                     class="nc-staff-header"
-                    :style="{ borderBottom: '3px solid ' + staff.color }"
+                    :style="{ backgroundColor: staff.color + '18', borderBottom: '3px solid ' + staff.color }"
                 >
-                    <span class="nc-staff-name">{{ staff.name }}</span>
+                    <div class="nc-staff-name">{{ staff.name }}</div>
                 </div>
             </div>
 
@@ -33,6 +33,11 @@
                             class="nc-grid-cell"
                             :class="{ 'nc-hour-border': slot.isHour }"
                         ></div>
+                    </div>
+
+                    <!-- Now indicator -->
+                    <div v-if="nowIndicatorStyle" class="nc-now-indicator" :style="nowIndicatorStyle">
+                        <div class="nc-now-dot"></div>
                     </div>
 
                     <!-- Events overlay -->
@@ -79,15 +84,34 @@ export default {
         return {
             startHour: 7,
             endHour: 22,
+            nowMinutes: this.getCurrentMinutes(),
+            nowTimer: null,
         };
     },
 
     mounted() {
+        // Auto-scroll to current hour - 1
         this.$nextTick(() => {
             if (this.$refs.gridBody) {
-                this.$refs.gridBody.scrollTop = 0;
+                const now = new Date();
+                const currentHour = now.getHours();
+                const scrollToHour = Math.max(this.startHour, currentHour - 1);
+                const ROW_HEIGHT = 24;
+                const slotsFromStart = (scrollToHour - this.startHour) * 2;
+                this.$refs.gridBody.scrollTop = slotsFromStart * ROW_HEIGHT;
             }
         });
+
+        // Update now indicator every minute
+        this.nowTimer = setInterval(() => {
+            this.nowMinutes = this.getCurrentMinutes();
+        }, 60000);
+    },
+
+    beforeUnmount() {
+        if (this.nowTimer) {
+            clearInterval(this.nowTimer);
+        }
     },
 
     computed: {
@@ -142,8 +166,25 @@ export default {
             return slots;
         },
 
+        nowIndicatorStyle() {
+            const now = new Date();
+            const todayStr = this.formatDate(now);
+            if (todayStr !== this.currentDate) return null;
+
+            const minutes = this.nowMinutes;
+            if (minutes < this.startHour * 60 || minutes > this.endHour * 60) return null;
+
+            const ROW_HEIGHT = 24;
+            const minutesFromStart = minutes - this.startHour * 60;
+            const top = (minutesFromStart / 30) * ROW_HEIGHT;
+
+            return {
+                top: `${top}px`,
+            };
+        },
+
         positionedEvents() {
-            const ROW_HEIGHT = 30;
+            const ROW_HEIGHT = 24;
             const GUTTER_WIDTH = 60;
 
             return this.events.map((event) => {
@@ -177,13 +218,13 @@ export default {
                     style: {
                         position: 'absolute',
                         top: `${topSlots * ROW_HEIGHT}px`,
-                        height: `${heightSlots * ROW_HEIGHT - 2}px`,
+                        height: `${Math.max(heightSlots * ROW_HEIGHT - 2, 18)}px`,
                         left: `calc(${GUTTER_WIDTH}px + ${colIndex} * ((100% - ${GUTTER_WIDTH}px) / ${totalCols}) + 2px)`,
                         width: `calc((100% - ${GUTTER_WIDTH}px) / ${totalCols} - 4px)`,
                         backgroundColor: staffColor,
                         color: '#fff',
-                        borderRadius: '4px',
-                        padding: '2px 4px',
+                        borderRadius: '6px',
+                        padding: '2px 6px',
                         fontSize: '11px',
                         overflow: 'hidden',
                         cursor: 'pointer',
@@ -196,6 +237,18 @@ export default {
     },
 
     methods: {
+        getCurrentMinutes() {
+            const now = new Date();
+            return now.getHours() * 60 + now.getMinutes();
+        },
+
+        formatDate(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        },
+
         darkenColor(hex, amount) {
             let color = hex.replace('#', '');
             if (color.length === 3) {
