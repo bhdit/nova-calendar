@@ -139,18 +139,34 @@
             </div>
 
             <div class="center-items">
-                <!-- View switcher -->
-                <div class="nc-view-switcher">
-                    <button
-                        v-for="v in viewOptions"
-                        :key="v.key"
-                        class="nc-view-btn"
-                        :class="{ 'nc-view-btn-active': activeView === v.key }"
-                        @click="switchView(v.key)"
-                    >
-                        {{ v.label }}
-                    </button>
-                </div>
+                <!-- View switcher dropdown -->
+                <Dropdown
+                    :handle-internal-clicks="true"
+                    class="flex h-9 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700"
+                    dusk="view-switcher"
+                >
+                    <DropdownTrigger class="toolbar-button px-3 text-sm">
+                        <span>{{ activeViewLabel }}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </DropdownTrigger>
+                    <template #menu>
+                        <DropdownMenu width="140">
+                            <div class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
+                                <button
+                                    v-for="v in viewOptions"
+                                    :key="v.key"
+                                    class="py-2 px-3 w-full block text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
+                                    :class="{ 'font-bold text-primary-500 dark:text-primary-400': activeView === v.key }"
+                                    @click="switchView(v.key)"
+                                >
+                                    {{ v.label }}
+                                </button>
+                            </div>
+                        </DropdownMenu>
+                    </template>
+                </Dropdown>
             </div>
 
             <div class="right-items">
@@ -854,6 +870,10 @@
                     { key: 'week', label: 'S\u0103pt\u0103m\u00e2n\u0103' },
                     { key: 'day', label: 'Zi' },
                 ];
+            },
+
+            activeViewLabel() {
+                return this.viewOptions.find(v => v.key === this.activeView)?.label || '';
             },
 
             weekStartDate() {

@@ -110,7 +110,39 @@
 #nc-control a.button {
     border: 1px rgba(var(--colors-gray-500), 0.2) solid;
     border-radius: 6px;
-    padding: 0.5rem;
+    padding: 0.375rem;
+}
+
+#nc-control a.button svg {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+#nc-control .left-items h1 {
+    font-size: 1rem;
+    margin: 0;
+}
+
+#nc-control .toolbar-button {
+    display: flex;
+    align-items: center;
+    height: 2.25rem;
+    font-size: 0.875rem;
+}
+
+/* Filter button: ensure visible in dark mode */
+.dark #nc-control .toolbar-button {
+    color: #e5e7eb;
+}
+
+.dark #nc-control [dusk="staff-filter"],
+.dark #nc-control [dusk="view-switcher"] {
+    border-color: #4b5563;
+}
+
+.dark #nc-control [dusk="staff-filter"] svg,
+.dark #nc-control [dusk="view-switcher"] svg {
+    color: #e5e7eb;
 }
 
 /*
