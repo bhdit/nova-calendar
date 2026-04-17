@@ -66,10 +66,10 @@ class ToolServiceProvider extends ServiceProvider
                 } else if (!strlen(trim($calendarConfig['uri']))) {
                     throw new \Exception("Empty calendar config option `uri` for calendar `$calendarKey` in config/nova-calendar.php");
                 } else {
-                    Nova::router(['nova', Authorize::class], $calendarConfig['uri'])
+                    Nova::router(['nova', 'nova.auth', Authorize::class], $calendarConfig['uri'])
                         ->group(__DIR__ . '/../routes/inertia.php');
 
-                    Route::middleware(['nova', Authorize::class])
+                    Route::middleware(['nova', 'nova.auth', Authorize::class])
                         ->prefix('nova-vendor/marshmallow/nova-calendar/' . $calendarConfig['uri'])
                         ->group(__DIR__ . '/../routes/api.php');
                 }

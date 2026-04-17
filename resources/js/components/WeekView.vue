@@ -52,7 +52,7 @@
                         class="nc-grid-event"
                         :style="event.style"
                         :title="event.title + ' (' + event.service_name + ')'"
-                        @click="$emit('open-event', event)"
+                        @click="$emit('open-event', $event, event)"
                     >
                         <div class="nc-event-time">{{ event.startTime }} - {{ event.endTime }}</div>
                         <div class="nc-event-title">{{ event.title }}</div>
@@ -65,6 +65,15 @@
 </template>
 
 <script>
+const STATUS_COLORS = {
+    scheduled:   { bg: '#bfdbfe', text: '#1e3a8a' },
+    completed:   { bg: '#bbf7d0', text: '#14532d' },
+    cancelled:   { bg: '#fecaca', text: '#7f1d1d' },
+    no_show:     { bg: '#fed7aa', text: '#7c2d12' },
+    rescheduled: { bg: '#ddd6fe', text: '#4c1d95' },
+    pending:     { bg: '#e2e8f0', text: '#334155' },
+};
+
 export default {
     name: 'WeekView',
 
@@ -208,6 +217,7 @@ export default {
                 const heightSlots = (clampedEnd - clampedStart) / 30;
 
                 const staffColor = this.getStaffColor(event.staff_id);
+                const statusPair = STATUS_COLORS[event.status] || STATUS_COLORS.scheduled;
 
                 const startTimeStr = `${String(eventStart.getHours()).padStart(2, '0')}:${String(eventStart.getMinutes()).padStart(2, '0')}`;
                 const endTimeStr = `${String(eventEnd.getHours()).padStart(2, '0')}:${String(eventEnd.getMinutes()).padStart(2, '0')}`;
@@ -222,15 +232,16 @@ export default {
                         height: `${Math.max(heightSlots * ROW_HEIGHT - 2, 18)}px`,
                         left: `calc(60px + ${dayIndex} * ((100% - 60px) / 7) + 2px)`,
                         width: `calc((100% - 60px) / 7 - 4px)`,
-                        backgroundColor: staffColor,
-                        color: '#fff',
+                        backgroundColor: statusPair.bg,
+                        color: statusPair.text,
                         borderRadius: '6px',
                         padding: '2px 6px',
                         fontSize: '11px',
                         overflow: 'hidden',
                         cursor: 'pointer',
                         zIndex: 10,
-                        borderLeft: `3px solid ${this.darkenColor(staffColor, 30)}`,
+                        borderTop: `4px solid ${staffColor}`,
+                        textDecoration: event.status === 'cancelled' ? 'line-through' : 'none',
                     },
                 };
             }).filter(Boolean);

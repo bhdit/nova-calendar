@@ -395,7 +395,7 @@
                                                 'nc-col-' + day.weekdayColumn,
                                                 'span-' + event.spansDaysN,
                                             ]"
-                                            @click="open($event, event.url)"
+                                            @click="open($event, event)"
                                             :style="this.stylesForEvent(event)"
                                             v-bind:class="{
                                                 clickable: event.url,
@@ -454,7 +454,7 @@
                                         >
                                             <div
                                                 :class="['nc-event']"
-                                                @click="open($event, event.url)"
+                                                @click="open($event, event)"
                                                 :style="
                                                     this.stylesForEvent(event)
                                                 "
@@ -557,17 +557,31 @@
                 />
             </Card>
         </div>
+
+        <BookingDrawer
+            :event="drawerEvent"
+            :open="drawerOpen"
+            :saving="drawerSaving"
+            @close="closeDrawer"
+            @mark-completed="onMarkCompleted"
+            @mark-no-show="onMarkNoShow"
+            @cancel-booking="onCancelBooking"
+            @save-notes="onSaveNotes"
+            @go-to-resource="onGoToResource"
+        />
     </div>
 </template>
 
 <script>
     import WeekView from "../components/WeekView.vue";
     import DayView from "../components/DayView.vue";
+    import BookingDrawer from "../components/BookingDrawer.vue";
 
     export default {
         components: {
             WeekView,
             DayView,
+            BookingDrawer,
         },
 
         mounted() {
@@ -751,18 +765,117 @@
                 this.loadTimeGridEvents();
             },
 
-            openTimeGridEvent(event) {
-                if (event.id) {
-                    Nova.visit(`/resources/customer-bookings/${event.id}`);
+            openTimeGridEvent(e, event) {
+                this.open(e, event);
+            },
+
+            open(e, event) {
+                if (!event || !event.url) return;
+                if (e && (e.metaKey || e.ctrlKey)) {
+                    window.open(Nova.url(event.url));
+                    return;
+                }
+                // Month-view events don't carry `id` directly — parse it from
+                // the resource URL (format: /resources/{uriKey}/{id}).
+                let normalized = event;
+                if (!event.id) {
+                    const match = String(event.url).match(/\/resources\/[^/]+\/(\d+)/);
+                    if (match) {
+                        normalized = { ...event, id: Number(match[1]) };
+                    }
+                }
+                this.drawerEvent = normalized;
+                this.drawerOpen = true;
+                this.refreshDrawerEvent();
+            },
+
+            closeDrawer() {
+                this.drawerOpen = false;
+                this.drawerSaving = false;
+            },
+
+            refreshDrawerEvent() {
+                if (!this.drawerEvent?.id) return Promise.resolve();
+                return Nova.request()
+                    .get(`/manage/calendar/events/${this.drawerEvent.id}`)
+                    .then((response) => {
+                        this.drawerEvent = response.data;
+                    })
+                    .catch((err) => {
+                        if (err?.response?.status === 404) {
+                            this.closeDrawer();
+                            Nova.error("Programare indisponibilă");
+                        }
+                    });
+            },
+
+            refreshCurrentView() {
+                if (this.activeView === "month") {
+                    this.reload(false);
+                } else {
+                    this.loadTimeGridEvents();
                 }
             },
 
-            open(e, url) {
-                if (!url) return;
-                if (e.metaKey || e.ctrlKey) {
-                    window.open(Nova.url(url));
-                } else {
-                    Nova.visit(url);
+            postStatus(status, reason = null) {
+                if (!this.drawerEvent?.id) return;
+                const payload = { status };
+                if (reason) payload.reason = reason;
+                this.drawerSaving = true;
+                Nova.request()
+                    .patch(
+                        `/manage/calendar/events/${this.drawerEvent.id}/status`,
+                        payload
+                    )
+                    .then(() => {
+                        this.refreshCurrentView();
+                        return this.refreshDrawerEvent();
+                    })
+                    .catch((err) => {
+                        const msg =
+                            err?.response?.data?.message ||
+                            "Acțiunea a eșuat. Încearcă din nou.";
+                        Nova.error(msg);
+                    })
+                    .finally(() => {
+                        this.drawerSaving = false;
+                    });
+            },
+
+            onMarkCompleted() {
+                this.postStatus("completed");
+            },
+
+            onMarkNoShow() {
+                this.postStatus("no_show");
+            },
+
+            onCancelBooking(payload) {
+                this.postStatus("cancelled", payload?.reason || null);
+            },
+
+            onSaveNotes(payload) {
+                if (!this.drawerEvent?.id) return;
+                this.drawerSaving = true;
+                Nova.request()
+                    .put(`/manage/calendar/events/${this.drawerEvent.id}`, {
+                        notes: payload?.notes ?? "",
+                    })
+                    .then(() => {
+                        this.refreshCurrentView();
+                        return this.refreshDrawerEvent();
+                    })
+                    .catch(() => {
+                        Nova.error("Salvarea notițelor a eșuat.");
+                    })
+                    .finally(() => {
+                        this.drawerSaving = false;
+                    });
+            },
+
+            onGoToResource() {
+                if (this.drawerEvent?.url) {
+                    Nova.visit(this.drawerEvent.url);
                 }
             },
 
@@ -955,6 +1068,10 @@
                 selectedStaffIds: [],
                 currentDay: new Date(),
                 currentWeekStart: new Date(),
+                // Drawer state
+                drawerOpen: false,
+                drawerEvent: null,
+                drawerSaving: false,
             };
         },
     };
