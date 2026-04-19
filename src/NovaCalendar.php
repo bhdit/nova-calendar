@@ -56,8 +56,16 @@ class NovaCalendar extends Tool
 
     public function boot()
     {
-        Nova::script('nova-calendar', __DIR__ . '/../dist/js/tool.js');
-        Nova::style('nova-calendar', __DIR__ . '/../dist/css/tool.css');
+        // Content-hashed asset name so every bundle change produces a new
+        // URL. The Nova Blade layout re-emits <script>/<link> tags on each
+        // page load, so a regular reload (⌘R / pull-to-refresh) picks up
+        // the new bundle — no hard refresh needed.
+        $jsPath = __DIR__ . '/../dist/js/tool.js';
+        $cssPath = __DIR__ . '/../dist/css/tool.css';
+        $hash = substr(md5_file($jsPath) . md5_file($cssPath), 0, 8);
+
+        Nova::script('nova-calendar-' . $hash, $jsPath);
+        Nova::style('nova-calendar-' . $hash, $cssPath);
     }
 
     public function uri()
