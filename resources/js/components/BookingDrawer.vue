@@ -382,8 +382,10 @@ export default {
         open(isOpen) {
             if (isOpen) {
                 this.resetTransientState();
+                this.lockBodyScroll();
                 document.addEventListener('keydown', this.handleEscape);
             } else {
+                this.unlockBodyScroll();
                 document.removeEventListener('keydown', this.handleEscape);
             }
         },
@@ -396,6 +398,7 @@ export default {
     beforeUnmount() {
         window.removeEventListener('resize', this.handleResize);
         document.removeEventListener('keydown', this.handleEscape);
+        this.unlockBodyScroll();
     },
 
     methods: {
@@ -407,6 +410,25 @@ export default {
         },
         handleEscape(e) {
             if (e.key === 'Escape') this.$emit('close');
+        },
+        // Pin the background so a swipe inside the drawer that runs past
+        // the scroll boundary can't drag the Nova page underneath. Save
+        // the prior inline values so we restore, not hard-clear, on close.
+        lockBodyScroll() {
+            if (typeof document === 'undefined') return;
+            if (this._scrollLocked) return;
+            this._scrollLocked = true;
+            this._prevBodyOverflow = document.body.style.overflow;
+            this._prevHtmlOverflow = document.documentElement.style.overflow;
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        },
+        unlockBodyScroll() {
+            if (typeof document === 'undefined') return;
+            if (!this._scrollLocked) return;
+            this._scrollLocked = false;
+            document.body.style.overflow = this._prevBodyOverflow || '';
+            document.documentElement.style.overflow = this._prevHtmlOverflow || '';
         },
         onToggleWhen() {
             if (this.relativeAvailable) this.showAbsolute = !this.showAbsolute;
@@ -468,6 +490,11 @@ export default {
     background: rgba(0, 0, 0, 0.45);
     z-index: 1000;
     display: flex;
+    /* Stop swipes that reach the backdrop (outside the drawer body) from
+       chaining into the Nova page underneath. touch-action is deliberately
+       not set — the drawer aside inherits hit-testing through the backdrop
+       and 'none' would block its internal scroll. */
+    overscroll-behavior: contain;
 }
 
 .nc-drawer {
@@ -561,11 +588,19 @@ export default {
 .nc-drawer-body {
     flex: 1 1 auto;
     overflow-y: auto;
+    /* overscroll-behavior stops iOS/Android from scroll-chaining the
+       main Nova page when the user swipes past the drawer's scroll
+       boundary. Pairs with the body-overflow lock set by the open
+       watcher — the behavior rule handles in-drawer swipes, the body
+       lock handles swipes that start outside the drawer body. */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     padding: 16px 20px 20px;
     display: flex;
     flex-direction: column;
     gap: 14px;
 }
+
 
 .nc-field {
     display: flex;
