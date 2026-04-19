@@ -133,12 +133,12 @@
                     </template>
                 </Dropdown>
 
-                <h1 class="text-90 font-normal text-xl md:text-2xl noselect">
+                <h1 class="text-90 font-normal text-base md:text-lg noselect">
                     <span>{{ displayTitle }}</span>
                 </h1>
             </div>
 
-            <div class="center-items">
+            <div class="right-items">
                 <!-- View switcher dropdown -->
                 <Dropdown
                     :handle-internal-clicks="true"
@@ -167,9 +167,7 @@
                         </DropdownMenu>
                     </template>
                 </Dropdown>
-            </div>
 
-            <div class="right-items">
                 <!-- Staff filter (for week/day views) -->
                 <Dropdown
                     v-if="activeView !== 'month' && staffList.length > 0"
