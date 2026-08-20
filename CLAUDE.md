@@ -52,7 +52,7 @@ The host app creates a `CalendarDataProvider` subclass. Key overridable methods:
 
 ## Development
 
-This package is consumed by `clinichelp` as a composer path repo:
+This package is consumed by `lidisto` as a composer path repo:
 ```json
 {
     "type": "path",
@@ -61,7 +61,7 @@ This package is consumed by `clinichelp` as a composer path repo:
 }
 ```
 
-Changes here are immediately reflected in `clinichelp` via the symlink. No composer update needed for source changes; only for new dependencies.
+Changes here are immediately reflected in `lidisto` via the symlink. No composer update needed for source changes; only for new dependencies.
 
 ## Building frontend
 
